@@ -12,10 +12,6 @@ PYTHON_DL=https://redbean.dev/python.com
 
 ZIP=zip.com
 ZIP_DL=https://redbean.dev/zip.com
-UNZIP=unzip.com
-UNZIP_DL=https://redbean.dev/unzip.com
-
-
 all: add
 
 ${PYTHON}.template:
@@ -37,15 +33,8 @@ add: ${ZIP} ${PYTHON} venv/bin/pip
 	cd srv/ && ../${ZIP} -r ../${PROJECT} .args `ls -A`
 	cd srv-pip/ && ../${ZIP} -r ../${PROJECT} `ls -A`
 
-unzip.com: ; curl -s ${ZIP_DL} -o $@ -z $@
-ls: unzip.com
-	@unzip -vl ./${PYTHON} | grep -v 'usr/\|.symtab'
-
-log: ${PROJECT}.log
-	tail -f ${PROJECT}.log
-
-start: ${PYTHON}
-	./${PYTHON} -vv
+start: ${PROJECT}
+	./${PROJECT}
 
 clean:
-	rm -f ${PYTHON} ${PYTHON}.template ${ZIP} ${UNZIP} srv-pip/
+	rm -f ${PYTHON} ${PYTHON}.template ${ZIP} srv-pip/

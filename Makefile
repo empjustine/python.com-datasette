@@ -6,71 +6,46 @@
 # ╚─────────────────────────────────────────────────────────────────*/
 .PHONY: all clean test log ls log start start-daemon restart-daemon stop-daemon
 
-# Change redbean to whatever you want
-PROJECT=redbean
-REDBEAN=${PROJECT}.com
-REDBEAN_VERSION=2.0.17
-REDBEAN_DL=https://redbean.dev/redbean-${REDBEAN_VERSION}.com
+PROJECT=datasette.com
+PYTHON=python.com
+PYTHON_DL=https://redbean.dev/python.com
 
 ZIP=zip.com
 ZIP_DL=https://redbean.dev/zip.com
 UNZIP=unzip.com
 UNZIP_DL=https://redbean.dev/unzip.com
-DEFINITIONS=definitions/redbean.lua
-DEFINITIONS_DL=https://raw.githubusercontent.com/jart/cosmopolitan/d76dfadc7a0a9a5b7500d697e15a64c70d53eb12/tool/net/definitions.lua
 
-NPD=--no-print-directory
 
-all: add ${DEFINITIONS}
+all: add
 
-${REDBEAN}.template:
-	curl -s ${REDBEAN_DL} -o $@ -z $@ && \
-		chmod +x $@
+${PYTHON}.template:
+	curl -s ${PYTHON_DL} -o $@ -z $@ && chmod +x $@
 
-${REDBEAN}: ${REDBEAN}.template
-	cp ${REDBEAN}.template ${REDBEAN}
+${PROJECT}: ${PYTHON}.template
+	cp ${PYTHON}.template ${PROJECT}
 
 ${ZIP}:
 	curl -s ${ZIP_DL} -o $@ -z $@
 	chmod +x ${ZIP}
 
-${DEFINITIONS}:
-	mkdir -p definitions
-	curl -s ${DEFINITIONS_DL} -o $@ -z $@
+venv/bin/pip:
+	python -m venv venv
 
-add: ${ZIP} ${REDBEAN}
-	cp -f ${REDBEAN}.template ${REDBEAN}
-	cd srv/ && ../${ZIP} -r ../${REDBEAN} `ls -A`
+add: ${ZIP} ${PYTHON} venv/bin/pip
+	cp -f ${PYTHON}.template ${PROJECT}
+	venv/bin/pip install -r requirements.txt --target srv-pip/
+	cd srv/ && ../${ZIP} -r ../${PROJECT} .args `ls -A`
+	cd srv-pip/ && ../${ZIP} -r ../${PROJECT} `ls -A`
 
 unzip.com: ; curl -s ${ZIP_DL} -o $@ -z $@
 ls: unzip.com
-	@unzip -vl ./${REDBEAN} | grep -v \
-		'usr/\|.symtab'
+	@unzip -vl ./${PYTHON} | grep -v 'usr/\|.symtab'
 
 log: ${PROJECT}.log
 	tail -f ${PROJECT}.log
 
-start: ${REDBEAN}
-	./${REDBEAN} -vv
-
-start-daemon: ${REDBEAN}
-	@(test ! -f ${PROJECT}.pid && \
-		./${REDBEAN} -vv -d -L ${PROJECT}.log -P ${PROJECT}.pid && \
-		printf "started $$(cat ${PROJECT}.pid)\n") \
-		|| echo "already running $$(cat ${PROJECT}.pid)"
-
-restart-daemon:
-	@(test ! -f ${PROJECT}.pid && \
-		./${REDBEAN} -vv -d -L ${PROJECT}.log -P ${PROJECT}.pid && \
-		printf "started $$(cat ${PROJECT}.pid)") \
-		|| kill -HUP $$(cat ${PROJECT}.pid) && \
-		printf "restarted $$(cat ${PROJECT}.pid)\n"
-
-stop-daemon: ${PROJECT}.pid
-	@kill -TERM $$(cat ${PROJECT}.pid) && \
-		printf "stopped $$(cat ${PROJECT}.pid)\n" && \
-		rm ${PROJECT}.pid \
+start: ${PYTHON}
+	./${PYTHON} -vv
 
 clean:
-	rm -f ${PROJECT}.log ${PROJECT}.pid ${REDBEAN} ${REDBEAN}.template ${ZIP} ${UNZIP} ${DEFINITIONS}
-	[ "$(ls -A definitions)" ] || rm -rf definitions
+	rm -f ${PYTHON} ${PYTHON}.template ${ZIP} ${UNZIP} srv-pip/

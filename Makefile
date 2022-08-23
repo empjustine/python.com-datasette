@@ -18,23 +18,21 @@ ${PYTHON}.template:
 	curl -s ${PYTHON_DL} -o $@ -z $@ && chmod +x $@
 
 ${PROJECT}: ${PYTHON}.template
-	cp ${PYTHON}.template ${PROJECT}
+	cp -f ${PYTHON}.template ${PROJECT}
 
 ${ZIP}:
 	curl -s ${ZIP_DL} -o $@ -z $@
 	chmod +x ${ZIP}
 
-venv/bin/pip:
+add: ${ZIP} ${PROJECT}
 	python -m venv venv
-
-add: ${ZIP} ${PYTHON} venv/bin/pip
-	cp -f ${PYTHON}.template ${PROJECT}
-	venv/bin/pip install -r requirements.txt --target srv-pip/
-	cd srv/ && ../${ZIP} -r ../${PROJECT} .args `ls -A`
-	cd srv-pip/ && ../${ZIP} -r ../${PROJECT} `ls -A`
+	venv/bin/pip install -r requirements.txt --target venv/.python
+	cd venv/ && ../${ZIP} -r ../${PROJECT} .python
+	./${ZIP} -r ./${PROJECT} .python .args
 
 start: ${PROJECT}
 	./${PROJECT}
 
 clean:
-	rm -f ${PYTHON} ${PYTHON}.template ${ZIP} srv-pip/
+	rm -f ${PROJECT} ${PYTHON} ${PYTHON}.template ${ZIP}
+	rm -rf venv/.python
